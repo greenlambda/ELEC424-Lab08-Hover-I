@@ -112,9 +112,9 @@ class AiController():
             'sensorfusion6.ki': 0.00200000009499, 
             'imu_acc_lpf.factor': 32 }
 
-    def readInput(self):
+    def read_input(self):
         """Read input from the selected device."""
-
+	self.data["althold"] = False;
         # First we read data from controller as normal
         # ----------------------------------------------------
         # We only want the pitch/roll cal to be "oneshot", don't
@@ -197,7 +197,7 @@ class AiController():
             self.timer1 = -self.repeatDelay
             thrustDelta = 0
             # Example Call to pidTuner
-            pidTuner()
+            #pidTuner()
 
 
         self.addThrust( thrustDelta )
@@ -228,7 +228,7 @@ class AiController():
 
 
     # ELEC424 TODO: Implement this function
-    def pidTuner():
+    def pidTuner(self):
         """ 
         example on how to update crazyflie params
         """
