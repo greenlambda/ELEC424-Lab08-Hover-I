@@ -1,0 +1,20 @@
+{
+  "max_rp": 30, 
+  "max_thrust": 80, 
+  "flightmode": "Normal", 
+  "open_tabs": "Flight Control", 
+  "enable_debug_driver": false, 
+  "input_device_blacklist": "(VirtualBox|VMware)", 
+  "trim_pitch": 0.0, 
+  "slew_limit": 45, 
+  "ui_update_period": 100, 
+  "slew_rate": 30, 
+  "client_side_xmode": false, 
+  "device_config_mapping": {}, 
+  "trim_roll": 0.0, 
+  "auto_reconnect": false, 
+  "input_device": "", 
+  "link_uri": "", 
+  "max_yaw": 200, 
+  "min_thrust": 25
+}
