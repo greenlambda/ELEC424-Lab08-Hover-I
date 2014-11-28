@@ -109,7 +109,7 @@ class MainUI(QtGui.QMainWindow, main_window_class):
         self._statusbar_label = QLabel("Loading device and configuration.")
         self.statusBar().addWidget(self._statusbar_label)
 
-        self.joystickReader = JoystickReader(cf = self.cf)
+        self.joystickReader = JoystickReader(cf=self.cf)
         self._active_device = ""
         self.configGroup = QActionGroup(self._menu_mappings, exclusive=True)
         self._load_input_data()
