@@ -1,3 +1,17 @@
-# Don't commit compiled python
+syntax: glob
 *.pyc
+*~
+config.json
+dist/*
+build/*
+# PC client settings
+conf/*
 
+# Eclipse settings
+.project
+.pydevproject
+.settings/*
+msvcp90.dll
+
+# PyCharm
+.idea/*
