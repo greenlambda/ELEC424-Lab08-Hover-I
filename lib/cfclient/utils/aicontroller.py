@@ -77,40 +77,43 @@ class AiController():
 
         # ---AI tuning variables---
         # This is the thrust of the motors duing hover.  0.5 reaches ~1ft depending on battery
-        self.maxThrust = 0.30
+        self.maxThrust = 0.65
         # Determines how fast to take off
-        self.thrustInc = 0.021
         self.takeoffTime = 0.5
+        self.thrustInc = 0.021
         # Determines how fast to land
-        self.thrustDec = -0.019
-        self.hoverTime = 1
+        self.thrustDec = -0.015
+        self.hoverTime = 3
         # Sets the delay between test flights
-        self.repeatDelay = 2
+        self.repeatDelay = 10
 
         # parameters pulled from json with defaults from crazyflie pid.h
         # perl -ne '/"(\w*)": {/ && print $1,  "\n" ' lib/cflib/cache/27A2C4BA.json
         self.cfParams = {
             'pid_rate.pitch_kp': 70.0, 
             'pid_rate.pitch_kd': 0.0, 
-            'pid_rate.pitch_ki': 0.0, 
+            'pid_rate.pitch_ki': 2.0, 
             'pid_rate.roll_kp': 70.0, 
             'pid_rate.roll_kd': 0.0, 
-            'pid_rate.roll_ki': 0.0, 
+            'pid_rate.roll_ki': 2.0, 
             'pid_rate.yaw_kp': 50.0, 
             'pid_rate.yaw_kd': 0.0, 
             'pid_rate.yaw_ki': 25.0, 
             'pid_attitude.pitch_kp': 3.5, 
             'pid_attitude.pitch_kd': 0.0, 
-            'pid_attitude.pitch_ki': 2.0, 
+            'pid_attitude.pitch_ki': 4.0, 
             'pid_attitude.roll_kp': 3.5, 
             'pid_attitude.roll_kd': 0.0, 
-            'pid_attitude.roll_ki': 2.0, 
+            'pid_attitude.roll_ki': 4.0, 
             'pid_attitude.yaw_kp': 0.0, 
             'pid_attitude.yaw_kd': 0.0, 
             'pid_attitude.yaw_ki': 0.0, 
             'sensorfusion6.kp': 0.800000011921, 
             'sensorfusion6.ki': 0.00200000009499, 
             'imu_acc_lpf.factor': 32 }
+        for p in self.cfParams:
+            self.updateCrazyFlieParam(p)
+
 
     def read_input(self):
         """Read input from the selected device."""
@@ -238,19 +241,6 @@ class AiController():
     # update via param.py -> radiodriver.py -> crazyradio.py -> usbRadio )))
     def updateCrazyFlieParam(self, completename ):
         self.cf.param.set_value( unicode(completename), str(self.cfParams[completename]) )
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     def start_input(self, deviceId, inputMap):
