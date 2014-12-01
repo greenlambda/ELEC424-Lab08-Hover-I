@@ -267,7 +267,8 @@ class JoystickReader:
             # Thust limiting (slew, minimum and emergency stop)
             if althold and self._has_pressure_sensor:
                 thrust = int(round(JoystickReader.deadband(thrust,0.2)*32767 + 32767)) #Convert to uint16
-            
+                if emergency_stop:
+                    self.althold_updated.call(str(False))
             else:
                 if raw_thrust < 0.05 or emergency_stop:
                     thrust = 0

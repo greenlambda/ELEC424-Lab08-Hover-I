@@ -74,54 +74,76 @@ class AiController():
         # AI variables
         self.timer1 = 0
         self.lastTime = 0
+        self.lastParamTime = 0
 
         # ---AI tuning variables---
         # This is the thrust of the motors duing hover.  0.5 reaches ~1ft depending on battery
-        self.maxThrust = 0.65
+        self.maxThrust = 0.6
+        self.minLandThrust = 0.35
         # Determines how fast to take off
         self.takeoffTime = 0.5
-        self.thrustInc = 0.021
         # Determines how fast to land
-        self.thrustDec = -0.015
-        self.hoverTime = 3
+        self.landTime = 3
+        # The hover time
+        self.hoverTime = 5
         # Sets the delay between test flights
-        self.repeatDelay = 10
+        self.repeatDelay = 5
 
         # parameters pulled from json with defaults from crazyflie pid.h
         # perl -ne '/"(\w*)": {/ && print $1,  "\n" ' lib/cflib/cache/27A2C4BA.json
         self.cfParams = {
             'pid_rate.pitch_kp': 70.0, 
             'pid_rate.pitch_kd': 0.0, 
-            'pid_rate.pitch_ki': 2.0, 
-            'pid_rate.roll_kp': 70.0, 
+            'pid_rate.pitch_ki': 0.0, 
+            'pid_rate.roll_kp': 70.0,
             'pid_rate.roll_kd': 0.0, 
-            'pid_rate.roll_ki': 2.0, 
+            'pid_rate.roll_ki': 0.0, 
             'pid_rate.yaw_kp': 50.0, 
             'pid_rate.yaw_kd': 0.0, 
             'pid_rate.yaw_ki': 25.0, 
             'pid_attitude.pitch_kp': 3.5, 
             'pid_attitude.pitch_kd': 0.0, 
-            'pid_attitude.pitch_ki': 4.0, 
+            'pid_attitude.pitch_ki': 6.0, 
             'pid_attitude.roll_kp': 3.5, 
             'pid_attitude.roll_kd': 0.0, 
-            'pid_attitude.roll_ki': 4.0, 
+            'pid_attitude.roll_ki': 6.0, 
             'pid_attitude.yaw_kp': 0.0, 
             'pid_attitude.yaw_kd': 0.0, 
             'pid_attitude.yaw_ki': 0.0, 
             'sensorfusion6.kp': 0.800000011921, 
             'sensorfusion6.ki': 0.00200000009499, 
-            'imu_acc_lpf.factor': 32 }
-        for p in self.cfParams:
-            self.updateCrazyFlieParam(p)
+            'imu_acc_lpf.factor': 32,
+            'altHold.kd': 0.5,
+            'altHold.ki': 0.075,
+            'altHold.kp': 1.0
+            }
 
+        # Add a callback once the crazyflie is fully connected to update
+        # these parameters
+        self.cf.connected.add_callback(lambda uri: self._update_all_parameters(uri))
+
+    def _update_all_parameters(self, uri):
+        logger.info("Updating parameters on [%s]", uri)
+        for p in self.cfParams:
+            self.updateCrazyFlieParam(p)        
+
+    def start_input(self, deviceId, inputMap):
+        """Initalize the reading and open the device with deviceId and set the mapping for axis/buttons using the
+        inputMap"""
+        self.data = {"roll":0.0, "pitch":0.0, "yaw":0.0, "thrust":0.0, "pitchcal":0.0, "rollcal":0.0, "estop": False, "exit":False, "althold":False}
+        self.aiData = {"roll":0.0, "pitch":0.0, "yaw":0.0, "thrust":0.0, "pitchcal":0.0, "rollcal":0.0, "estop": False, "exit":False, "althold":False}
+        self.inputMap = inputMap
+        self.j = pygame.joystick.Joystick(deviceId)
+        self.j.init()
 
     def read_input(self):
-        """Read input from the selected device."""
-	self.data["althold"] = False;
+        """Read input from the selected device.
         # First we read data from controller as normal
         # ----------------------------------------------------
         # We only want the pitch/roll cal to be "oneshot", don't
         # save this value.
+        """
+
         self.data["pitchcal"] = 0.0
         self.data["rollcal"] = 0.0
         for e in pygame.event.get():
@@ -147,9 +169,11 @@ class AiController():
                     if (key == "estop"):
                         self.data["estop"] = not self.data["estop"]
                     elif (key == "exit"):
-                        # self.data["exit"] = True
                         self.data["exit"] = not self.data["exit"]
                         logger.info("Toggling AI %d", self.data["exit"])
+                    elif (key == "althold"):
+                        self.data["althold"] = not self.data["althold"]
+                        logger.info("Toggling althold %d", self.data["althold"])
                     else: # Generic cal for pitch/roll
                         self.data[key] = self.inputMap[index]["scale"]
             except Exception:
@@ -165,7 +189,6 @@ class AiController():
         return self.data
 
 
-    # ELEC424 TODO:  Improve this function as needed
     def augmentInputWithAi(self):
         """
         Overrides the throttle input with a controlled takeoff, hover, and land loop.
@@ -185,72 +208,51 @@ class AiController():
         # -------------------------------------------------------------
         # delay before takeoff 
         if self.timer1 < 0:
-            thrustDelta = 0
+            self.aiData["thrust"] = 0
+            self.aiData["althold"] = False
+            self.aiData["yaw"] = 0
         # takeoff
-        elif self.timer1 < self.takeoffTime :
-            thrustDelta = self.thrustInc
+        elif self.timer1 < self.takeoffTime:
+            self.aiData["althold"] = True
+            self.aiData["thrust"] = 1
+            self.aiData["yaw"] = 0
+            #self.aiData["thrust"] = (self.maxThrust/self.takeoffTime) * self.timer1
         # hold
-        elif self.timer1 < self.takeoffTime + self.hoverTime : 
-            thrustDelta = 0
+        elif self.timer1 < self.takeoffTime + self.hoverTime:
+            self.aiData["althold"] = True
+            self.aiData["thrust"] = 0
+            self.aiData["yaw"] = 0.5
+            #self.aiData["thrust"] = self.maxThrust
         # land
-        elif self.timer1 < 2 * self.takeoffTime + self.hoverTime :
-            thrustDelta = self.thrustDec
+        elif self.timer1 < self.takeoffTime + self.hoverTime + self.landTime:
+            self.aiData["althold"] = True
+            self.aiData["thrust"] = -1
+            self.aiData["yaw"] = 0
+            # self.aiData["thrust"] = self.maxThrust - ((self.maxThrust - self.minLandThrust)/self.landTime) * (self.timer1 - (self.takeoffTime + self.hoverTime))
         # repeat
         else:
             self.timer1 = -self.repeatDelay
-            thrustDelta = 0
-            # Example Call to pidTuner
-            #pidTuner()
+            self.aiData["thrust"] = 0
+            self.aiData["althold"] = False
+            self.aiData["yaw"] = 0
 
-
-        self.addThrust( thrustDelta )
-
+        # Override thrust
+        self.data["thrust"] = self.aiData["thrust"]
 
         # override Other inputs as needed
         # --------------------------------------------------------------
         # self.data["roll"] = self.aiData["roll"]
         # self.data["pitch"] = self.aiData["pitch"]
-        # self.data["yaw"] = self.aiData["yaw"]
+        self.data["yaw"] = self.aiData["yaw"]
+        self.data["althold"] = self.aiData["althold"]
         # self.data["pitchcal"] = self.aiData["pitchcal"]
         # self.data["rollcal"] = self.aiData["rollcal"]
         # self.data["estop"] = self.aiData["estop"]
         # self.data["exit"] = self.aiData["exit"]
 
-    def addThrust(self, thrustDelta):
-        # Increment thrust
-        self.aiData["thrust"] = self.aiData["thrust"] + thrustDelta 
-        # Check for max
-        if self.aiData["thrust"] > self.maxThrust:
-            self.aiData["thrust"] = self.maxThrust
-        # check for min 
-        elif self.aiData["thrust"] < 0:
-            self.aiData["thrust"] = 0
-        
-        # overwrite joystick thrust values
-        self.data["thrust"] = self.aiData["thrust"]
-
-
-    # ELEC424 TODO: Implement this function
-    def pidTuner(self):
-        """ 
-        example on how to update crazyflie params
-        """
-        self.cfParams['pid_rate.yaw_kp'] = self.cfParams['pid_rate.yaw_kp'] + 1
-        self.updateCrazyFlieParam('pid_rate.yaw_kp')
-
     # update via param.py -> radiodriver.py -> crazyradio.py -> usbRadio )))
     def updateCrazyFlieParam(self, completename ):
         self.cf.param.set_value( unicode(completename), str(self.cfParams[completename]) )
-
-
-    def start_input(self, deviceId, inputMap):
-        """Initalize the reading and open the device with deviceId and set the mapping for axis/buttons using the
-        inputMap"""
-        self.data = {"roll":0.0, "pitch":0.0, "yaw":0.0, "thrust":0.0, "pitchcal":0.0, "rollcal":0.0, "estop": False, "exit":False}
-        self.aiData = {"roll":0.0, "pitch":0.0, "yaw":0.0, "thrust":0.0, "pitchcal":0.0, "rollcal":0.0, "estop": False, "exit":False}
-        self.inputMap = inputMap
-        self.j = pygame.joystick.Joystick(deviceId)
-        self.j.init()
 
 
     def enableRawReading(self, deviceId):
