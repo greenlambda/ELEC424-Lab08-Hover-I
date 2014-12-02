@@ -6,7 +6,16 @@ In aicontroller.py we added a callback to change the parameters of stabilizer.c 
 In input.py, we changed the read_input function to add emergency stop functionality.  Unfortunately, this functionality did not work as we expected it would and appears to be a bit buggy.
 There were a few other changes that we made, but they were minor in nature.  The outlined changes above encompass the primary modifications we made.
 
-To build, we'd suggest downloading from our git repos.  (See links below)  Then compile with make CLOAD=0, then make flash.  Then download our repo for the lab8, and then run sudo ./setup.sh and ./bin/cfclient.
+To build, we'd suggest downloading from our git repositories.  (See links below)
+Compile and flast the firmware with
+make CLOAD=0
+make CLOAD=0 flash
+
+Then download our repository for the lab8, and then run
+sudo ./setup.sh
+./bin/cfclient
+
+
 crazieflie-firmware: https://github.com/greenlambda/crazyflie-firmware
 Lab08: https://github.com/greenlambda/ELEC424-Lab08-Hover-I
 
