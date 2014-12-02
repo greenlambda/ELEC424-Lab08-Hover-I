@@ -1,5 +1,8 @@
 Lab07: PID tuning
-<PUT NAMES HERE>
+Jeremy Hunt, Christopher Buck
+
+Regarding the sensors we use:
+We use the barometer and the accelerometer in our control loop to maintain consistent altitude.  We use a complementary filter on the data from each sensor.  We low pass the pressure data and high pass the integrated accelerometer data to determine a compensated altitude measurement.  We also took out the smoothing algorithm originally provided, and we split the PID controller into two controllers.  One PID loop aims to limit the quadcopter to have zero vertical velocity while the other aims to bring the copter to the correct altitude.  The outputs of these two control systems are summed to determine the output thrust.
 
 <PARTNER1>:
 <PARTNER2>:
