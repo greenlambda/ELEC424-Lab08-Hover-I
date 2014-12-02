@@ -1,6 +1,13 @@
 Lab07: PID tuning
 Jeremy Hunt, Christopher Buck
 
+The primary files we changed were stabilizer.c, aicontroller.py, and input.py.  In stabilizer.c, we largely rewrote the altHold function.  In our new implementation we included the code for the complementary filter and the two PID controllers.  In this file we also added a bunch of parameters to control the PID values from the python code.
+In aicontroller.py we added a callback to change the parameters of stabilizer.c on boot.  We also implemented aicontrol and wrote aicontrol to use altHold functionality.
+In input.py, we changed the read_input function to add emergency stop functionality.  Unfortunately, this functionality did not work as we expected it would and appears to be a bit buggy.
+There were a few other changes that we made, but they were minor in nature.  The outlined changes above encompass the primary modifications we made.
+
+To build, we'd suggest downloading from our git repos.  See user: GreenLambda.  Then compile with make CLOAD=0, then make flash.  Then download our repo for the lab8, and then run sudo ./setup.sh and ./bin/cfclient.
+
 Regarding the sensors we use:
 We use the barometer and the accelerometer in our control loop to maintain consistent altitude.  We use a complementary filter on the data from each sensor.  We low pass the pressure data and high pass the integrated accelerometer data to determine a compensated altitude measurement.  We also took out the smoothing algorithm originally provided, and we split the PID controller into two controllers.  One PID loop aims to limit the quadcopter to have zero vertical velocity while the other aims to bring the copter to the correct altitude.  The outputs of these two control systems are summed to determine the output thrust.
 
