@@ -11,6 +11,8 @@ Compile and flast the firmware with
 make CLOAD=0
 make CLOAD=0 flash
 
+To fly the quadcopter with our code, use the control sticks as normal to operate in manual control mode.  Activate altHold mode by toggling the altHold button. Toggling the altHold button again will resume manual control mode. Use the Emergency stop button to deactivate the quadcopter.  Reactivating the emergency stop button will disengage emergency stop mode.
+
 Then download our repository for the lab8, and then run
 sudo ./setup.sh
 ./bin/cfclient
