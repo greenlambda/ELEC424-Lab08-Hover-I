@@ -80,12 +80,12 @@ class AiController():
         self.preTakeoffThrust = 0.30
         # Determines how fast to take off
         self.preTakeoffTime = 0.5
-        self.takeoffTime = 0.75
+        self.takeoffTime = 1.1
         # Determines how fast to land
         self.landTime = 2
         # The hover time
         self.hoverTime = 45
-        self.hoverHeight = 1.37 + 3.5
+        self.hoverHeight = 1.37 + 3.5 + 25.5
         # Sets the delay between test flights
         self.repeatDelay = 2
 
@@ -114,8 +114,8 @@ class AiController():
             'sensorfusion6.ki': 0.00200000009499, 
             'imu_acc_lpf.factor': 32,
             'altHold.kd': 0.01,
-            'altHold.ki': 0.1,
-            'altHold.kp': 1.0,
+            'altHold.ki': 0.05,
+            'altHold.kp': 2.0,
             'altHold.hoverKd': 0.00,
             'altHold.hoverKi': 0.04,
             'altHold.hoverKp': 2.0,
@@ -236,7 +236,7 @@ class AiController():
             self.aiData["althold"] = True
             self.cfParams["altHold.altHoldTargetOffset"] = self.hoverHeight
             self.aiData["yaw"] = 0.9
-            self.aiData["thrust"] = 0
+            self.aiData["thrust"] = .7
         # hold
         elif self.timer1 < self.preTakeoffTime + self.takeoffTime + self.hoverTime:
             self.aiData["althold"] = True
