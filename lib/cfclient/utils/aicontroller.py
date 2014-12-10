@@ -79,13 +79,13 @@ class AiController():
         # ---AI tuning variables---
         self.preTakeoffThrust = 0.30
         # Determines how fast to take off
-        self.preTakeoffTime = 2
+        self.preTakeoffTime = 0.5
         self.takeoffTime = 0.75
         # Determines how fast to land
         self.landTime = 2
         # The hover time
         self.hoverTime = 45
-        self.hoverHeight = -1.37
+        self.hoverHeight = 1.37 + 3.5
         # Sets the delay between test flights
         self.repeatDelay = 2
 
@@ -114,15 +114,15 @@ class AiController():
             'sensorfusion6.ki': 0.00200000009499, 
             'imu_acc_lpf.factor': 32,
             'altHold.kd': 0.01,
-            'altHold.ki': 0.03,
-            'altHold.kp': 0.5,
+            'altHold.ki': 0.1,
+            'altHold.kp': 1.0,
             'altHold.hoverKd': 0.00,
             'altHold.hoverKi': 0.04,
             'altHold.hoverKp': 2.0,
             'altHold.altEstKp1': 0.8,
             'altHold.altEstKp2': 1.0,
             'altHold.altEstKi': 0.001,
-            'altHold.altHoverAlpha': 0.6,
+            'altHold.altHoverAlpha': 0.7,
             'altHold.altHoldTargOff': 0.0,
             'altHold.altHoldErrMax': 5.0
             }
