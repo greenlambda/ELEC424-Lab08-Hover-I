@@ -77,17 +77,17 @@ class AiController():
         self.lastParamTime = 0
 
         # ---AI tuning variables---
-        # This is the thrust of the motors duing hover.  0.5 reaches ~1ft depending on battery
-        self.maxThrust = 0.6
-        self.minLandThrust = 0.35
+        self.preTakeoffThrust = 0.30
         # Determines how fast to take off
-        self.takeoffTime = 10
+        self.preTakeoffTime = 2
+        self.takeoffTime = 0.75
         # Determines how fast to land
-        self.landTime = 10
+        self.landTime = 2
         # The hover time
         self.hoverTime = 45
+        self.hoverHeight = -1.37
         # Sets the delay between test flights
-        self.repeatDelay = 5
+        self.repeatDelay = 2
 
         # parameters pulled from json with defaults from crazyflie pid.h
         # perl -ne '/"(\w*)": {/ && print $1,  "\n" ' lib/cflib/cache/27A2C4BA.json
@@ -122,8 +122,9 @@ class AiController():
             'altHold.altEstKp1': 0.8,
             'altHold.altEstKp2': 1.0,
             'altHold.altEstKi': 0.001,
-            'altHold.altHoverAlpha': 1.0,
-            'altHold.altHoldTargOff': 0
+            'altHold.altHoverAlpha': 0.6,
+            'altHold.altHoldTargOff': 0.0,
+            'altHold.altHoldErrMax': 5.0
             }
 
         # Add a callback once the crazyflie is fully connected to update
@@ -193,7 +194,9 @@ class AiController():
         if self.data["exit"]:
             self.augmentInputWithAi()
         else:
-			self.data["althold"] = False        	
+            self.data["althold"] = False 
+            self.timer1 = 0
+            self.lastTime = 0
 
         # Return control Data
         return self.data
@@ -221,27 +224,37 @@ class AiController():
             self.aiData["althold"] = False
             self.cfParams["altHold.altHoldTargetOffset"] = 0
             self.aiData["yaw"] = 0
-        # takeoff
-        elif self.timer1 < self.takeoffTime:
-            self.aiData["althold"] = True
-            self.cfParams["altHold.altHoldTargetOffset"] = 1.5
+            self.aiData["thrust"] = 0
+        # pre-takeoff
+        elif self.timer1 < self.preTakeoffTime:
+            self.aiData["althold"] = False
+            self.cfParams["altHold.altHoldTargetOffset"] = 0
             self.aiData["yaw"] = 0
-        # hold
-        elif self.timer1 < self.takeoffTime + self.hoverTime:
+            self.aiData["thrust"] = self.preTakeoffThrust
+        # takeoff
+        elif self.timer1 < self.preTakeoffTime + self.takeoffTime:
             self.aiData["althold"] = True
-            self.cfParams["altHold.altHoldTargetOffset"] = 1.5
-            self.aiData["yaw"] = 0.5
+            self.cfParams["altHold.altHoldTargetOffset"] = self.hoverHeight
+            self.aiData["yaw"] = 0.9
+            self.aiData["thrust"] = 0
+        # hold
+        elif self.timer1 < self.preTakeoffTime + self.takeoffTime + self.hoverTime:
+            self.aiData["althold"] = True
+            self.cfParams["altHold.altHoldTargetOffset"] = self.hoverHeight
+            self.aiData["yaw"] = 0.6
         # land
-        elif self.timer1 < self.takeoffTime + self.hoverTime + self.landTime:
+        elif self.timer1 < self.preTakeoffTime + self.takeoffTime + self.hoverTime + self.landTime:
             self.aiData["althold"] = True
             self.cfParams["altHold.altHoldTargetOffset"] = 0
             self.aiData["yaw"] = 0
+            self.aiData["thrust"] = 0
         # repeat
         else:
             self.timer1 = -self.repeatDelay
             self.aiData["althold"] = False
             self.cfParams["altHold.altHoldTargetOffset"] = 0
             self.aiData["yaw"] = 0
+            self.aiData["thrust"] = 0
 
         # Update the barametor offset to take off
         self.updateCrazyFlieParam("altHold.altHoldTargOff")
@@ -252,7 +265,7 @@ class AiController():
         # self.data["pitch"] = self.aiData["pitch"]
         self.data["roll"] = 0
         self.data["pich"] = 0
-        self.data["thrust"] = 0
+        self.data["thrust"] = self.aiData["thrust"]
         self.data["yaw"] = self.aiData["yaw"]
         self.data["althold"] = self.aiData["althold"]
         # self.data["pitchcal"] = self.aiData["pitchcal"]
