@@ -116,12 +116,13 @@ class AiController():
             'altHold.kd': 0.01,
             'altHold.ki': 0.03,
             'altHold.kp': 0.5,
-            'altHold.hoverKd': 0.01,
-            'altHold.hoverKi': 0.2,
-            'altHold.hoverKp': 0.01,
+            'altHold.hoverKd': 0.00,
+            'altHold.hoverKi': 0.04,
+            'altHold.hoverKp': 2.0,
             'altHold.altEstKp1': 0.8,
             'altHold.altEstKp2': 1.0,
-            'altHold.altEstKi': 0.001
+            'altHold.altEstKi': 0.001,
+            'altHold.altHoverAlpha': 1.0,
             }
 
         # Add a callback once the crazyflie is fully connected to update
