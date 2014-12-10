@@ -260,19 +260,24 @@ class JoystickReader:
             roll = JoystickReader.deadband(roll, 0.2) * self._max_rp_angle
             pitch = JoystickReader.deadband(pitch, 0.2) * self._max_rp_angle
 
-            if (self._old_alt_hold != althold):
-                self.althold_updated.call(str(althold))
-                self._old_alt_hold = althold
-
             if self._emergency_stop != emergency_stop:
                 self._emergency_stop = emergency_stop
                 self.emergency_stop_updated.call(self._emergency_stop)
+
+            if (self._old_alt_hold != althold and not emergency_stop):
+                self.althold_updated.call(str(althold))
+                self._old_alt_hold = althold
+
+            if emergency_stop:
+                # Turn off alt-hold
+                althold = False
+                self.althold_updated.call(str(False))
+                self._old_alt_hold = False
 
             # Thust limiting (slew, minimum and emergency stop)
             if althold and self._has_pressure_sensor:
                 thrust = int(round(JoystickReader.deadband(thrust,0.2)*32767 + 32767)) #Convert to uint16
                 if emergency_stop:
-                    self.althold_updated.call(str(False))
                     thrust = 0
             else:
                 if raw_thrust < 0.06 or emergency_stop:

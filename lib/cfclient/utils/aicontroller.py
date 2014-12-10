@@ -81,11 +81,11 @@ class AiController():
         self.maxThrust = 0.6
         self.minLandThrust = 0.35
         # Determines how fast to take off
-        self.takeoffTime = 0.5
+        self.takeoffTime = 10
         # Determines how fast to land
-        self.landTime = 3
+        self.landTime = 10
         # The hover time
-        self.hoverTime = 5
+        self.hoverTime = 45
         # Sets the delay between test flights
         self.repeatDelay = 5
 
@@ -103,10 +103,10 @@ class AiController():
             'pid_rate.yaw_ki': 25.0, 
             'pid_attitude.pitch_kp': 3.5, 
             'pid_attitude.pitch_kd': 0.0, 
-            'pid_attitude.pitch_ki': 6.0, 
+            'pid_attitude.pitch_ki': 4.0, 
             'pid_attitude.roll_kp': 3.5, 
             'pid_attitude.roll_kd': 0.0, 
-            'pid_attitude.roll_ki': 6.0, 
+            'pid_attitude.roll_ki': 4.0, 
             'pid_attitude.yaw_kp': 0.0, 
             'pid_attitude.yaw_kd': 0.0, 
             'pid_attitude.yaw_ki': 0.0, 
@@ -123,6 +123,7 @@ class AiController():
             'altHold.altEstKp2': 1.0,
             'altHold.altEstKi': 0.001,
             'altHold.altHoverAlpha': 1.0,
+            'altHold.altHoldTargOff': 0
             }
 
         # Add a callback once the crazyflie is fully connected to update
@@ -191,6 +192,8 @@ class AiController():
         # ----------------------------------------------------------
         if self.data["exit"]:
             self.augmentInputWithAi()
+        else:
+			self.data["althold"] = False        	
 
         # Return control Data
         return self.data
@@ -215,41 +218,41 @@ class AiController():
         # -------------------------------------------------------------
         # delay before takeoff 
         if self.timer1 < 0:
-            self.aiData["thrust"] = 0
             self.aiData["althold"] = False
+            self.cfParams["altHold.altHoldTargetOffset"] = 0
             self.aiData["yaw"] = 0
         # takeoff
         elif self.timer1 < self.takeoffTime:
             self.aiData["althold"] = True
-            self.aiData["thrust"] = 1
+            self.cfParams["altHold.altHoldTargetOffset"] = 1.5
             self.aiData["yaw"] = 0
-            #self.aiData["thrust"] = (self.maxThrust/self.takeoffTime) * self.timer1
         # hold
         elif self.timer1 < self.takeoffTime + self.hoverTime:
             self.aiData["althold"] = True
-            self.aiData["thrust"] = 0
+            self.cfParams["altHold.altHoldTargetOffset"] = 1.5
             self.aiData["yaw"] = 0.5
-            #self.aiData["thrust"] = self.maxThrust
         # land
         elif self.timer1 < self.takeoffTime + self.hoverTime + self.landTime:
             self.aiData["althold"] = True
-            self.aiData["thrust"] = -1
+            self.cfParams["altHold.altHoldTargetOffset"] = 0
             self.aiData["yaw"] = 0
-            # self.aiData["thrust"] = self.maxThrust - ((self.maxThrust - self.minLandThrust)/self.landTime) * (self.timer1 - (self.takeoffTime + self.hoverTime))
         # repeat
         else:
             self.timer1 = -self.repeatDelay
-            self.aiData["thrust"] = 0
             self.aiData["althold"] = False
+            self.cfParams["altHold.altHoldTargetOffset"] = 0
             self.aiData["yaw"] = 0
 
-        # Override thrust
-        self.data["thrust"] = self.aiData["thrust"]
+        # Update the barametor offset to take off
+        self.updateCrazyFlieParam("altHold.altHoldTargOff")
 
         # override Other inputs as needed
         # --------------------------------------------------------------
         # self.data["roll"] = self.aiData["roll"]
         # self.data["pitch"] = self.aiData["pitch"]
+        self.data["roll"] = 0
+        self.data["pich"] = 0
+        self.data["thrust"] = 0
         self.data["yaw"] = self.aiData["yaw"]
         self.data["althold"] = self.aiData["althold"]
         # self.data["pitchcal"] = self.aiData["pitchcal"]
