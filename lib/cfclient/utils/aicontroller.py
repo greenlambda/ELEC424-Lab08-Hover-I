@@ -80,52 +80,52 @@ class AiController():
         self.preTakeoffThrust = 0.2
         # Determines how fast to take off
         self.preTakeoffTime = 6
-        self.takeoffTime = 0.5
+        self.takeoffTime = 2
         # Determines how fast to land
-        self.landTime = 2
+        self.landTime = 8
         # The hover time
-        self.hoverTime = 45
+        self.hoverTime = 30
         # This is a fudge factor to take into account the propeller's effects on the barometer
-        self.hoverHeightError = 0
-        self.hoverHeight = self.hoverHeightError
+        self.hoverHeightError = 0.5
+        self.hoverHeight = 1 + self.hoverHeightError
         # Sets the delay between test flights
-        self.repeatDelay = 2
+        self.repeatDelay = 5
 
         # parameters pulled from json with defaults from crazyflie pid.h
         # perl -ne '/"(\w*)": {/ && print $1,  "\n" ' lib/cflib/cache/27A2C4BA.json
         self.cfParams = {
-            'pid_rate.pitch_kp': 70.0, 
+            'pid_rate.pitch_kp': 90.0, 
             'pid_rate.pitch_kd': 0.0, 
             'pid_rate.pitch_ki': 0.0, 
-            'pid_rate.roll_kp': 70.0,
+            'pid_rate.roll_kp': 90.0,
             'pid_rate.roll_kd': 0.0, 
             'pid_rate.roll_ki': 0.0, 
-            'pid_rate.yaw_kp': 50.0, 
+            'pid_rate.yaw_kp': 60.0, 
             'pid_rate.yaw_kd': 0.0, 
             'pid_rate.yaw_ki': 25.0, 
-            'pid_attitude.pitch_kp': 3.5, 
+            'pid_attitude.pitch_kp': 4.0, 
             'pid_attitude.pitch_kd': 0.0, 
-            'pid_attitude.pitch_ki': 4.0, 
-            'pid_attitude.roll_kp': 3.5, 
+            'pid_attitude.pitch_ki': 2.0, 
+            'pid_attitude.roll_kp': 4.0, 
             'pid_attitude.roll_kd': 0.0, 
-            'pid_attitude.roll_ki': 4.0, 
+            'pid_attitude.roll_ki': 2.0, 
             'pid_attitude.yaw_kp': 0.0, 
             'pid_attitude.yaw_kd': 0.0, 
             'pid_attitude.yaw_ki': 0.0, 
             'sensorfusion6.kp': 0.800000011921, 
             'sensorfusion6.ki': 0.00200000009499, 
             'imu_acc_lpf.factor': 32,
-            'altHold.kd': -0.5,
-            'altHold.ki': 4.0,
-            'altHold.kp': 3.0,
+            'altHold.kd': 0.0,
+            'altHold.ki': 0.001,
+            'altHold.kp': 0.4,
             'altHold.hoverKd': 0.1,
-            'altHold.hoverKi': 3.5,
-            'altHold.hoverKp': 5.5,
+            'altHold.hoverKi': 2.0,
+            'altHold.hoverKp': 7.0,
             'altHold.altEstKp1': 0.8,
             'altHold.altEstKp2': 1.0,
             'altHold.altEstKi': 0.0001,
-            'altHold.altHoverAlpha': 0.8,
             'altHold.altHoldTargOff': 0.0,
+            'altHold.vSpeedMax': 0.5,
             'altHold.altHoldErrMax': 5.0
             }
 
@@ -206,7 +206,6 @@ class AiController():
             self.data["roll"] = 0
             self.data["pich"] = 0
             self.data["yaw"] = 0
-            self.data["thrust"] = 0
 
 
         # Return control Data
@@ -233,40 +232,43 @@ class AiController():
         # delay before takeoff 
         if self.timer1 < 0:
             self.aiData["althold"] = False
-            self.cfParams["altHold.altHoldTargetOffset"] = 0
+            self.cfParams["altHold.altHoldTargOff"] = 0
             self.aiData["yaw"] = 0
             self.aiData["thrust"] = 0
         # pre-takeoff
         elif self.timer1 < self.preTakeoffTime:
             self.aiData["althold"] = False
-            self.cfParams["altHold.altHoldTargetOffset"] = 0
+            self.cfParams["altHold.altHoldTargOff"] = 0
             self.aiData["yaw"] = 0
             self.aiData["thrust"] = self.preTakeoffThrust
         # takeoff
         elif self.timer1 < self.preTakeoffTime + self.takeoffTime:
-            # self.aiData["althold"] = True
-            # self.cfParams["altHold.altHoldTargetOffset"] = self.hoverHeight
-            self.aiData["althold"] = False
+            self.aiData["althold"] = True
             self.cfParams["altHold.altHoldTargetOffset"] = self.hoverHeight
             self.aiData["yaw"] = 0.9
-            self.aiData["thrust"] = .7
+            self.aiData["thrust"] = 0
+
+            # self.aiData["althold"] = False
+            # self.cfParams["altHold.altHoldTargOff"] = self.hoverHeight
+            # self.aiData["yaw"] = 0.9
+            # self.aiData["thrust"] = 0.7
         # hold
         elif self.timer1 < self.preTakeoffTime + self.takeoffTime + self.hoverTime:
             self.aiData["althold"] = True
-            self.cfParams["altHold.altHoldTargetOffset"] = self.hoverHeight
+            self.cfParams["altHold.altHoldTargOff"] = self.hoverHeight
             self.aiData["yaw"] = 0.7
             self.aiData["thrust"] = 0
         # land
         elif self.timer1 < self.preTakeoffTime + self.takeoffTime + self.hoverTime + self.landTime:
             self.aiData["althold"] = True
-            self.cfParams["altHold.altHoldTargetOffset"] = 0
+            self.cfParams["altHold.altHoldTargOff"] = -self.hoverHeight
             self.aiData["yaw"] = 0
             self.aiData["thrust"] = 0
         # repeat
         else:
             self.timer1 = -self.repeatDelay
             self.aiData["althold"] = False
-            self.cfParams["altHold.altHoldTargetOffset"] = 0
+            self.cfParams["altHold.altHoldTargOff"] = 0
             self.aiData["yaw"] = 0
             self.aiData["thrust"] = 0
 
@@ -277,10 +279,10 @@ class AiController():
         # --------------------------------------------------------------
         # self.data["roll"] = self.aiData["roll"]
         # self.data["pitch"] = self.aiData["pitch"]
-        #self.data["roll"] = 0
-        #self.data["pich"] = 0
+        # self.data["roll"] = 0
+        # self.data["pich"] = 0
         self.data["thrust"] = self.aiData["thrust"]
-        #self.data["yaw"] = self.aiData["yaw"]
+        # self.data["yaw"] = self.aiData["yaw"]
         self.data["althold"] = self.aiData["althold"]
         # self.data["pitchcal"] = self.aiData["pitchcal"]
         # self.data["rollcal"] = self.aiData["rollcal"]
