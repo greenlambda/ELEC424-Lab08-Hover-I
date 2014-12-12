@@ -272,7 +272,7 @@ class JoystickReader:
             if althold and self._has_pressure_sensor:
                 thrust = int(round(JoystickReader.deadband(thrust,0.2)*32767 + 32767)) #Convert to uint16
             else:
-                if raw_thrust < 0.06 or emergency_stop:
+                if raw_thrust < 0.15 or emergency_stop:
                     thrust = 0
                 else:
                     thrust = self._min_thrust + thrust * (self._max_thrust -

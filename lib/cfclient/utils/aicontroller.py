@@ -77,15 +77,17 @@ class AiController():
         self.lastParamTime = 0
 
         # ---AI tuning variables---
-        self.preTakeoffThrust = 0.30
+        self.preTakeoffThrust = 0.2
         # Determines how fast to take off
-        self.preTakeoffTime = 0.5
-        self.takeoffTime = 1.1
+        self.preTakeoffTime = 6
+        self.takeoffTime = 0.5
         # Determines how fast to land
         self.landTime = 2
         # The hover time
         self.hoverTime = 45
-        self.hoverHeight = 1.37 + 3.5 + 25.5
+        # This is a fudge factor to take into account the propeller's effects on the barometer
+        self.hoverHeightError = 0
+        self.hoverHeight = self.hoverHeightError
         # Sets the delay between test flights
         self.repeatDelay = 2
 
@@ -113,16 +115,16 @@ class AiController():
             'sensorfusion6.kp': 0.800000011921, 
             'sensorfusion6.ki': 0.00200000009499, 
             'imu_acc_lpf.factor': 32,
-            'altHold.kd': 0.01,
-            'altHold.ki': 0.05,
-            'altHold.kp': 2.0,
-            'altHold.hoverKd': 0.00,
-            'altHold.hoverKi': 0.04,
-            'altHold.hoverKp': 2.0,
+            'altHold.kd': -0.5,
+            'altHold.ki': 4.0,
+            'altHold.kp': 3.0,
+            'altHold.hoverKd': 0.1,
+            'altHold.hoverKi': 3.5,
+            'altHold.hoverKp': 5.5,
             'altHold.altEstKp1': 0.8,
             'altHold.altEstKp2': 1.0,
-            'altHold.altEstKi': 0.001,
-            'altHold.altHoverAlpha': 0.7,
+            'altHold.altEstKi': 0.0001,
+            'altHold.altHoverAlpha': 0.8,
             'altHold.altHoldTargOff': 0.0,
             'altHold.altHoldErrMax': 5.0
             }
@@ -155,6 +157,7 @@ class AiController():
 
         self.data["pitchcal"] = 0.0
         self.data["rollcal"] = 0.0
+        aiToggled = False
         for e in pygame.event.get():
           if e.type == pygame.locals.JOYAXISMOTION:
             index = "Input.AXIS-%d" % e.axis 
@@ -179,6 +182,7 @@ class AiController():
                         self.data["estop"] = not self.data["estop"]
                     elif (key == "exit"):
                         self.data["exit"] = not self.data["exit"]
+                        aiToggled = True
                         logger.info("Toggling AI %d", self.data["exit"])
                     elif (key == "althold"):
                         self.data["althold"] = not self.data["althold"]
@@ -193,10 +197,17 @@ class AiController():
         # ----------------------------------------------------------
         if self.data["exit"]:
             self.augmentInputWithAi()
-        else:
+        elif not self.data["exit"] and aiToggled:
+            # We just exited the AI Mode
             self.data["althold"] = False 
+            self.data["thrust"] = 0
             self.timer1 = 0
             self.lastTime = 0
+            self.data["roll"] = 0
+            self.data["pich"] = 0
+            self.data["yaw"] = 0
+            self.data["thrust"] = 0
+
 
         # Return control Data
         return self.data
@@ -233,7 +244,9 @@ class AiController():
             self.aiData["thrust"] = self.preTakeoffThrust
         # takeoff
         elif self.timer1 < self.preTakeoffTime + self.takeoffTime:
-            self.aiData["althold"] = True
+            # self.aiData["althold"] = True
+            # self.cfParams["altHold.altHoldTargetOffset"] = self.hoverHeight
+            self.aiData["althold"] = False
             self.cfParams["altHold.altHoldTargetOffset"] = self.hoverHeight
             self.aiData["yaw"] = 0.9
             self.aiData["thrust"] = .7
@@ -241,7 +254,8 @@ class AiController():
         elif self.timer1 < self.preTakeoffTime + self.takeoffTime + self.hoverTime:
             self.aiData["althold"] = True
             self.cfParams["altHold.altHoldTargetOffset"] = self.hoverHeight
-            self.aiData["yaw"] = 0.6
+            self.aiData["yaw"] = 0.7
+            self.aiData["thrust"] = 0
         # land
         elif self.timer1 < self.preTakeoffTime + self.takeoffTime + self.hoverTime + self.landTime:
             self.aiData["althold"] = True
@@ -263,10 +277,10 @@ class AiController():
         # --------------------------------------------------------------
         # self.data["roll"] = self.aiData["roll"]
         # self.data["pitch"] = self.aiData["pitch"]
-        self.data["roll"] = 0
-        self.data["pich"] = 0
+        #self.data["roll"] = 0
+        #self.data["pich"] = 0
         self.data["thrust"] = self.aiData["thrust"]
-        self.data["yaw"] = self.aiData["yaw"]
+        #self.data["yaw"] = self.aiData["yaw"]
         self.data["althold"] = self.aiData["althold"]
         # self.data["pitchcal"] = self.aiData["pitchcal"]
         # self.data["rollcal"] = self.aiData["rollcal"]
