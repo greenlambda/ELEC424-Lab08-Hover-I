@@ -260,6 +260,7 @@ class Crazyflie():
         waiting for an answer on this port. If so, then cancel the retry
         timer.
         """
+        self._send_lock.acquire()
         longest_match = ()
         if len(self._answer_patterns) > 0:
             data = (pk.header,) + pk.datat
@@ -273,6 +274,7 @@ class Crazyflie():
                             longest_match = match
         if len(longest_match) > 0:
             del self._answer_patterns[longest_match]
+        self._send_lock.release()
 
     def send_packet(self, pk, expected_reply=(), resend=False):
         """

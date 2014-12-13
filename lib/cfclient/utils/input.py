@@ -246,8 +246,8 @@ class JoystickReader:
         """Read input data from the selected device"""
         try:
             data = self.inputdevice.read_input()
-            roll = data["roll"] * self._max_rp_angle
-            pitch = data["pitch"] * self._max_rp_angle
+            roll = data["roll"] #* self._max_rp_angle
+            pitch = data["pitch"] #* self._max_rp_angle
             thrust = data["thrust"]
             yaw = data["yaw"]
             raw_thrust = data["thrust"]
@@ -255,6 +255,10 @@ class JoystickReader:
             trim_roll = data["rollcal"]
             trim_pitch = data["pitchcal"]
             althold = data["althold"]
+
+            #Deadband the roll and pitch
+            roll = JoystickReader.deadband(roll, 0.2) * self._max_rp_angle
+            pitch = JoystickReader.deadband(pitch, 0.2) * self._max_rp_angle
 
             if (self._old_alt_hold != althold):
                 self.althold_updated.call(str(althold))
@@ -267,11 +271,8 @@ class JoystickReader:
             # Thust limiting (slew, minimum and emergency stop)
             if althold and self._has_pressure_sensor:
                 thrust = int(round(JoystickReader.deadband(thrust,0.2)*32767 + 32767)) #Convert to uint16
-                if emergency_stop:
-                    self.althold_updated.call(str(False))
-                    thrust = 0
             else:
-                if raw_thrust < 0.06 or emergency_stop:
+                if raw_thrust < 0.15 or emergency_stop:
                     thrust = 0
                 else:
                     thrust = self._min_thrust + thrust * (self._max_thrust -

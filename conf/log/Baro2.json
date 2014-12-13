@@ -3,10 +3,10 @@
     "logblock": {
       "variables": [
         { "stored_as": "", "type": "TOC", "name": "altHold.vSpeedComp", "fetch_as": "float" },
-        { "stored_as": "", "type": "TOC", "name": "acc.zw", "fetch_as": "float" }
+        { "stored_as": "", "type": "TOC", "name": "altHold.err", "fetch_as": "float" }
       ], 
       "name": "Baro2", 
-      "period": 50
+      "period": 60
     }
   }
 }
